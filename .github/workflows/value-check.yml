@@ -1,0 +1,30 @@
+name: value-check
+on:
+  schedule:
+    - cron: '20 21 * * *'   # 06:20 KST
+    - cron: '10 6 * * *'    # 15:10 KST
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: value-check
+  cancel-in-progress: false
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install yfinance
+      - run: python value_check.py value-check.json
+      - name: commit result
+        run: |
+          git config user.name "value-check-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add value-check.json
+          git diff --cached --quiet || git commit -m "auto update"
+          git pull --rebase origin main
+          git push
